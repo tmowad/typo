@@ -671,4 +671,20 @@ describe Admin::ContentController do
 
     end
   end
+
+  describe 'merge two articles' do
+    it 'should merge two articles successfully for administrator' do
+      article1_title = "Who's the big winner of the WCW royal rumble this year?"
+      article1_body = "The answer is that Hulk Hogan is actually the winner of the WCW royal rumble this year...he won due to a special technicality where it was discovered that yellow mustaches emit pheremones which other wrestlers are legally required to shy away from, thus allowig the Hulk to crush his opponents."
+      article2_title = "Hulk Wins again!!!"  
+      article2_body = "What was most surprising to the fans was that the Ultimate Warrior took the day off to get a tan at the beach instead of showing at the event.  Analysts believe this was an internal set-up where the Hulk's backers paid the Warrior a hefty sum to ensure Hulk's win, again.  What a disappointment for the WCW."
+      article = Factory(:article, :title => article1_title, :body => article1_body, 
+                        :user => Factory(:user, :login => Factory(:user, :login => 'first_user')))
+      article2 = Factory(:article, :title => article2_title, :body => article2_body, 
+                         :user => Factory(:user, :login => Factory(:user, :login => 'other_user')))
+      post :merge, :id => article.id, :merge_with => article2.id
+
+      
+    end
+  end
 end
