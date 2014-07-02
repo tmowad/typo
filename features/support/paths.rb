@@ -13,6 +13,8 @@ module NavigationHelpers
   def path_to(page_name)
     case page_name
 
+    when /^the article page for "(.*)"$/
+      '/admin/content/edit/' + Article.find_by_title($1).id.to_s
     when /^the home\s?page$/
       '/'
     when /^the new article page$/
