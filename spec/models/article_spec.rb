@@ -630,5 +630,19 @@ describe Article do
     end
 
   end
+
+  describe "#merge_with" do
+    before do
+      @article = Article.new
+      @article2 = Article.new
+      @article.body = "asdf"
+      @article2.body = "fdsa"
+    end
+
+    it "resulting body should be a.body + ' ' + b.body" do
+      @article.merge_with(@article2)
+      @article.body.should == "asdf fdsa"
+    end
+  end
 end
 
