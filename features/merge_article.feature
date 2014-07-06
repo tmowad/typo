@@ -10,12 +10,19 @@ Feature: Merge Articles
      | id | title    | body             |
      | 3  | Foobar   | brotherly love   |
      | 4  | Lavalamp | LoremIpsum again | 
+    And the following comments exist
+     | id | article_id | title        | body                      |
+     | 13 | 3          | "Good post!" | "this is so biblical..."  |
+     | 14 | 3          | "i disagree" | "Your assessment seems"   |
+     | 15 | 4          | "dangerous!" | "these things kill"       |
+     | 16 | 4          | "beauty."    | "your pics were natural"  |
 
   Scenario: Successfully merge articles
     Given I am on the article page for "Foobar"
     When I fill in "merge_with" with "4"
     And I press "Merge"
     Then the article "Foobar" should have body "brotherly love LoremIpsum again"
+    And the article "Foobar" should have comments "13,14,15,16"
 
   Scenario: Successfully merging articles consumes the merged in article
     Given I am on the article page for "Foobar"

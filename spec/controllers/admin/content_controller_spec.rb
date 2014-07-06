@@ -691,11 +691,24 @@ describe Admin::ContentController do
                           :user => @user)
         @article2 = Factory(:article, :title => @article2_title, :body => @article2_body, 
                            :user => @user)
+
+        @comment1 = Factory(:comment, :title => 'comment 1', :article => @article)
+        @comment2 = Factory(:comment, :title => 'comment 2', :article => @article)
+        @comment3 = Factory(:comment, :title => 'comment 3', :article => @article2)
+        @comment4 = Factory(:comment, :title => 'comment 4', :article => @article2)
       end
       it 'should merge two articles successfully for administrator' do
         post :merge, :id => @article.id, :merge_with => @article2.id
         Article.find_by_id(@article.id).body.should == @article1_body + " " + @article2_body
         response.should redirect_to(:action => 'index')
+      end
+      it 'should preserve comments' do
+        post :merge, :id => @article.id, :merge_with => @article2.id
+        article_reloaded = Article.find_by_id(@article.id)
+        [@comment1,@comment2,@comment3,@comment4].each do |comment|
+          Comment.find_by_id(comment.id).article.should eq(@article)
+          article_reloaded.comments.should include(comment)
+        end
       end
       it 'should not merge with itself' do
         post :merge, :id => @article.id, :merge_with => @article.id

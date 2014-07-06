@@ -635,12 +635,20 @@ describe Article do
     before do
       @article = Factory(:article, :body => "hello this is an initial article")
       @article2 = Factory(:article, :body => "well it turns out that this is similar content...")
+      @comment1 = Factory(:comment, :article => @article)
+      @comment2 = Factory(:comment, :article => @article2)
     end
 
     it "resulting body should be a.body + ' ' + b.body" do
       a1b = @article.body
       @article.merge_with(@article2)
       @article.body.should == "#{a1b} #{@article2.body}"
+    end
+
+    it "should preserve comments" do
+      @comment2.article.should eq(@article2)
+      @article.merge_with(@article2)
+      Comment.find_by_id(@comment2.id).article.should eq(@article)
     end
 
     it "should detect self-merge attempts" do

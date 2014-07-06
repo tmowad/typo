@@ -4,7 +4,25 @@ Given /^user "(.*?)" owns the following articles$/ do |user, table|
     article = Article.new(hash)
     article.id = hash[:id]
     article.user_id = user_id
-    article.save
+    article.save!
+  end
+end
+
+Given /^the following comments exist$/ do |table|
+  table.hashes.each do |hash|
+    comment = Comment.new(hash)
+    comment.id = hash[:id]
+    comment.author = "tmowad"
+    comment.save!
+  end
+end
+
+Then /^the article "(.*?)" should have comments "(.*?)"$/ do |title, comment_ids|
+  article = Article.find_by_title(title)
+  comment_ids.split(',').each do |comment_id|
+    c = Comment.find_by_id(comment_id)
+    c.article.should eq(article)
+    article.comments.should include(c)
   end
 end
 
