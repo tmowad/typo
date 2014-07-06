@@ -419,6 +419,7 @@ class Article < Content
   def merge_with(merge_article)
     return false if merge_article == nil || merge_article.id == self.id
     self.body = self.body + " " + merge_article.body
+    merge_article.delete
     true
   end
 

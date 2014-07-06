@@ -662,7 +662,7 @@ describe Admin::ContentController do
     describe 'destroy action can be access' do
 
       it 'should redirect when want destroy article' do
-        article = Factory(:article, :user => Factory(:user, :login => Factory(:user, :login => 'other_user')))
+          article = Factory(:article, :user => Factory(:user, :login => Factory(:user, :login => 'other_user')))
         lambda do
           get :destroy, :id => article.id
           response.should redirect_to(:action => 'index')
@@ -674,32 +674,70 @@ describe Admin::ContentController do
 
   describe 'merge two articles' do
     before :each do
-      Profile.delete_all
-      @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_admin, :label => Profile::ADMIN))
-      @user.editor = 'simple'
-      @user.save
-      request.session = {:user => @user.id}
-
       @article1_title = "Who's the big winner of the WCW royal rumble this year?"
       @article1_body = "The answer is that Hulk Hogan is actually the winner of the WCW royal rumble this year...he won due to a special technicality where it was discovered that yellow mustaches emit pheremones which other wrestlers are legally required to shy away from, thus allowig the Hulk to crush his opponents."
       @article2_title = "Hulk Wins again!!!"  
       @article2_body = "What was most surprising to the fans was that the Ultimate Warrior took the day off to get a tan at the beach instead of showing at the event.  Analysts believe this was an internal set-up where the Hulk's backers paid the Warrior a hefty sum to ensure Hulk's win, again.  What a disappointment for the WCW."
-      @article = Factory(:article, :title => @article1_title, :body => @article1_body, 
-                        :user => @user)
-      @article2 = Factory(:article, :title => @article2_title, :body => @article2_body, 
-                         :user => @user)
+
+      Profile.delete_all
     end
-    it 'should merge two articles successfully for administrator' do
-      post :merge, :id => @article.id, :merge_with => @article2.id
-      Article.find_by_id(@article.id).body.should == @article1_body + " " + @article2_body
-      response.should redirect_to(:action => 'index')
-     
+    context 'as an admin user' do
+      before :each do
+        @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_admin, :label => Profile::ADMIN))
+        @user.editor = 'simple'
+        @user.save
+        request.session = {:user => @user.id}
+        @article = Factory(:article, :title => @article1_title, :body => @article1_body, 
+                          :user => @user)
+        @article2 = Factory(:article, :title => @article2_title, :body => @article2_body, 
+                           :user => @user)
+      end
+      it 'should merge two articles successfully for administrator' do
+        post :merge, :id => @article.id, :merge_with => @article2.id
+        Article.find_by_id(@article.id).body.should == @article1_body + " " + @article2_body
+        response.should redirect_to(:action => 'index')
+      end
+      it 'should not merge with itself' do
+        post :merge, :id => @article.id, :merge_with => @article.id
+        Article.find_by_id(@article.id).body.should == @article1_body
+        response.should redirect_to(:action => 'edit', :id => @article.id)
+        request.flash[:error].should == "You cannot merge an article with itself"
+      end
+      it 'should not break when asking to merge with bad :merge_with id' do
+        post :merge, :id => @article.id, :merge_with => -1
+        Article.find_by_id(@article.id).body.should == @article1_body
+        response.should redirect_to(:action => 'edit', :id => @article.id)
+        request.flash[:error].should == "Article with id -1 does not exist"
+      end
+      it 'should not break when asking to merge with a bad :id either' do
+        post :merge, :id => -1, :merge_with => @article.id
+        response.should redirect_to(:action => 'index')
+        request.flash[:error].should == "Article with id -1 does not exist"
+      end
+      it 'should consume the merged in article after a successful merge' do
+        post :merge, :id => @article.id, :merge_with => @article2.id
+        Article.find_by_id(@article2.id).should be nil
+      end
     end
-    it 'should not merge with itself' do
-      post :merge, :id => @article.id, :merge_with => @article.id
-      Article.find_by_id(@article.id).body.should == @article1_body
-      response.should redirect_to(:action => 'edit', :id => @article.id)
-      request.flash[:error].should == "You cannot merge an article with itself"
+    context 'as an publisher' do
+      before :each do
+        @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_publisher))
+        @user.editor = 'simple'
+        @user.save
+        request.session = {:user => @user.id}
+        
+        @article = Factory(:article, :title => @article1_title, :body => @article1_body, 
+                          :user => @user)
+        @article2 = Factory(:article, :title => @article2_title, :body => @article2_body, 
+                           :user => @user)
+      end
+
+      it 'should not execute the action' do
+        post :merge, :id => @article.id, :merge_with => @article2.id
+        response.should redirect_to(:action => 'edit', :id => @article.id)
+        request.flash[:error].should == "Non-admin user cannot perform article merge operation"
+        Article.find_by_id(@article.id).body.should == @article1_body
+      end 
     end
   end
 end

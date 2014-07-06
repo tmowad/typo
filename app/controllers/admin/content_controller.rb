@@ -24,9 +24,25 @@ class Admin::ContentController < Admin::BaseController
   end
 
   def merge
-    main_article = Article.find(params[:id])
-    merge_article = Article.find(params[:merge_with])
-    if main_article.merge_with(merge_article)
+    # TODO: I think that publisher/-1-index combo will not work properly.
+    if current_user.profile.label != "admin"
+      flash[:error] = "Non-admin user cannot perform article merge operation"
+      redirect_to :action => 'edit', :id => params[:id]
+      return
+    end
+
+    main_article = Article.find_by_id(params[:id])
+    if !main_article
+      flash[:error] = "Article with id #{params[:id]} does not exist"
+      redirect_to :action => 'index'
+      return
+    end
+
+    merge_article = Article.find_by_id(params[:merge_with])
+    if !merge_article
+      flash[:error] = "Article with id #{params[:merge_with]} does not exist"
+      redirect_to :action => 'edit', :id => params[:id]
+    elsif main_article.merge_with(merge_article)
       main_article.save
       redirect_to :action => 'index'
     else
@@ -152,6 +168,7 @@ class Admin::ContentController < Admin::BaseController
   def real_action_for(action); { 'add' => :<<, 'remove' => :delete}[action]; end
 
   def new_or_edit
+    @is_admin = (current_user.login == "admin")
     id = params[:id]
     id = params[:article][:id] if params[:article] && params[:article][:id]
     @article = Article.get_or_build_article(id)

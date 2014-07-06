@@ -648,6 +648,11 @@ describe Article do
       @article.merge_with(@article).should be_false
       @article.body.should == a1b
     end
+
+    it "should destroy the merged in Article after merge" do
+      @article.merge_with(@article2).should be_true
+      Article.find_by_id(@article2.id).should be_nil
+    end
   end
 end
 
