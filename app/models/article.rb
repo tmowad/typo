@@ -417,7 +417,9 @@ class Article < Content
   end
 
   def merge_with(merge_article)
+    return false if merge_article == nil || merge_article.id == self.id
     self.body = self.body + " " + merge_article.body
+    true
   end
 
   protected

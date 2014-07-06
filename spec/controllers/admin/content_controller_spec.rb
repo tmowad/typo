@@ -674,30 +674,32 @@ describe Admin::ContentController do
 
   describe 'merge two articles' do
     before :each do
-      # I don't know where rspec is getting the idea that I already ran this before...
-      # Factory(:blog)
-      #TODO delete this after remove fixture
       Profile.delete_all
       @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_admin, :label => Profile::ADMIN))
       @user.editor = 'simple'
       @user.save
       request.session = {:user => @user.id}
-      #@user = Factory(:user, :login => Factory(:user, :login => 'first_user'))
-      #@user2 = Factory(:user, :login => Factory(:user, :login => 'other_user'))
+
+      @article1_title = "Who's the big winner of the WCW royal rumble this year?"
+      @article1_body = "The answer is that Hulk Hogan is actually the winner of the WCW royal rumble this year...he won due to a special technicality where it was discovered that yellow mustaches emit pheremones which other wrestlers are legally required to shy away from, thus allowig the Hulk to crush his opponents."
+      @article2_title = "Hulk Wins again!!!"  
+      @article2_body = "What was most surprising to the fans was that the Ultimate Warrior took the day off to get a tan at the beach instead of showing at the event.  Analysts believe this was an internal set-up where the Hulk's backers paid the Warrior a hefty sum to ensure Hulk's win, again.  What a disappointment for the WCW."
+      @article = Factory(:article, :title => @article1_title, :body => @article1_body, 
+                        :user => @user)
+      @article2 = Factory(:article, :title => @article2_title, :body => @article2_body, 
+                         :user => @user)
     end
     it 'should merge two articles successfully for administrator' do
-      article1_title = "Who's the big winner of the WCW royal rumble this year?"
-      article1_body = "The answer is that Hulk Hogan is actually the winner of the WCW royal rumble this year...he won due to a special technicality where it was discovered that yellow mustaches emit pheremones which other wrestlers are legally required to shy away from, thus allowig the Hulk to crush his opponents."
-      article2_title = "Hulk Wins again!!!"  
-      article2_body = "What was most surprising to the fans was that the Ultimate Warrior took the day off to get a tan at the beach instead of showing at the event.  Analysts believe this was an internal set-up where the Hulk's backers paid the Warrior a hefty sum to ensure Hulk's win, again.  What a disappointment for the WCW."
-      article = Factory(:article, :title => article1_title, :body => article1_body, 
-                        :user => @user)
-      article2 = Factory(:article, :title => article2_title, :body => article2_body, 
-                         :user => @user)
-      post :merge, :id => article.id, :merge_with => article2.id
-      Article.find_by_id(article.id).body.should == article1_body + " " + article2_body
+      post :merge, :id => @article.id, :merge_with => @article2.id
+      Article.find_by_id(@article.id).body.should == @article1_body + " " + @article2_body
       response.should redirect_to(:action => 'index')
      
+    end
+    it 'should not merge with itself' do
+      post :merge, :id => @article.id, :merge_with => @article.id
+      Article.find_by_id(@article.id).body.should == @article1_body
+      response.should redirect_to(:action => 'edit', :id => @article.id)
+      request.flash[:error].should == "You cannot merge an article with itself"
     end
   end
 end

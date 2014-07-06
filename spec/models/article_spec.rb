@@ -633,15 +633,20 @@ describe Article do
 
   describe "#merge_with" do
     before do
-      @article = Article.new
-      @article2 = Article.new
-      @article.body = "asdf"
-      @article2.body = "fdsa"
+      @article = Factory(:article, :body => "hello this is an initial article")
+      @article2 = Factory(:article, :body => "well it turns out that this is similar content...")
     end
 
     it "resulting body should be a.body + ' ' + b.body" do
+      a1b = @article.body
       @article.merge_with(@article2)
-      @article.body.should == "asdf fdsa"
+      @article.body.should == "#{a1b} #{@article2.body}"
+    end
+
+    it "should detect self-merge attempts" do
+      a1b = @article.body
+      @article.merge_with(@article).should be_false
+      @article.body.should == a1b
     end
   end
 end
